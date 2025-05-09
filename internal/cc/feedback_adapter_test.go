@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 package cc
 
 import (
@@ -56,46 +59,40 @@ func TestUnpackRunLengthChunk(t *testing.T) {
 			//nolint:dupl
 			acks: []Acknowledgment{
 				{
-					TLCC:      0,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 0,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 				{
-					TLCC:      1,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 1,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 				{
-					TLCC:      2,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 2,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 				{
-					TLCC:      3,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 3,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 				{
-					TLCC:      4,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 4,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 				{
-					TLCC:      5,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 5,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 			},
 			n:       6,
@@ -120,46 +117,40 @@ func TestUnpackRunLengthChunk(t *testing.T) {
 			start: 65534,
 			acks: []Acknowledgment{
 				{
-					TLCC:      65534,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{}.Add(250 * time.Microsecond),
-					RTT:       0,
+					SequenceNumber: 65534,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{}.Add(250 * time.Microsecond),
 				},
 				{
-					TLCC:      65535,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{}.Add(500 * time.Microsecond),
-					RTT:       0,
+					SequenceNumber: 65535,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{}.Add(500 * time.Microsecond),
 				},
 				{
-					TLCC:      0,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{}.Add(750 * time.Microsecond),
-					RTT:       0,
+					SequenceNumber: 0,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{}.Add(750 * time.Microsecond),
 				},
 				{
-					TLCC:      1,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{}.Add(1000 * time.Microsecond),
-					RTT:       0,
+					SequenceNumber: 1,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{}.Add(1000 * time.Microsecond),
 				},
 				{
-					TLCC:      2,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{}.Add(1250 * time.Microsecond),
-					RTT:       0,
+					SequenceNumber: 2,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{}.Add(1250 * time.Microsecond),
 				},
 				{
-					TLCC:      3,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{}.Add(1500 * time.Microsecond),
-					RTT:       0,
+					SequenceNumber: 3,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{}.Add(1500 * time.Microsecond),
 				},
 			},
 			n:       6,
@@ -178,46 +169,40 @@ func TestUnpackRunLengthChunk(t *testing.T) {
 			//nolint:dupl
 			acks: []Acknowledgment{
 				{
-					TLCC:      65534,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 65534,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 				{
-					TLCC:      65535,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 65535,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 				{
-					TLCC:      0,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 0,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 				{
-					TLCC:      1,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 1,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 				{
-					TLCC:      2,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 2,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 				{
-					TLCC:      3,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 3,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 			},
 			n:       0,
@@ -241,14 +226,14 @@ func TestUnpackRunLengthChunk(t *testing.T) {
 				assert.NoError(t, fa.OnSent(time.Time{}, h, 0, attributes))
 			}
 
-			n, refTime, acks, err := fa.unpackRunLengthChunk(time.Time{}, tc.start, time.Time{}, &tc.chunk, tc.deltas)
+			n, refTime, acks, err := fa.unpackRunLengthChunk(tc.start, time.Time{}, &tc.chunk, tc.deltas)
 			assert.NoError(t, err)
 			assert.Len(t, acks, len(tc.acks))
 			assert.Equal(t, tc.n, n)
 			assert.Equal(t, tc.refTime, refTime)
 
 			for i, a := range acks {
-				assert.Equal(t, tc.sentTLCC[i], a.TLCC)
+				assert.Equal(t, tc.sentTLCC[i], a.SequenceNumber)
 			}
 			assert.Equal(t, tc.acks, acks)
 		})
@@ -305,46 +290,40 @@ func TestUnpackStatusVectorChunk(t *testing.T) {
 			//nolint:dupl
 			acks: []Acknowledgment{
 				{
-					TLCC:      0,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 0,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 				{
-					TLCC:      1,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 1,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 				{
-					TLCC:      2,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 2,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 				{
-					TLCC:      3,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 3,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 				{
-					TLCC:      4,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 4,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 				{
-					TLCC:      5,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 5,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 			},
 			n:       6,
@@ -375,46 +354,40 @@ func TestUnpackStatusVectorChunk(t *testing.T) {
 			start: 65534,
 			acks: []Acknowledgment{
 				{
-					TLCC:      65534,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{}.Add(250 * time.Microsecond),
-					RTT:       0,
+					SequenceNumber: 65534,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{}.Add(250 * time.Microsecond),
 				},
 				{
-					TLCC:      65535,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{}.Add(500 * time.Microsecond),
-					RTT:       0,
+					SequenceNumber: 65535,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{}.Add(500 * time.Microsecond),
 				},
 				{
-					TLCC:      0,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{}.Add(750 * time.Microsecond),
-					RTT:       0,
+					SequenceNumber: 0,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{}.Add(750 * time.Microsecond),
 				},
 				{
-					TLCC:      1,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{}.Add(1000 * time.Microsecond),
-					RTT:       0,
+					SequenceNumber: 1,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{}.Add(1000 * time.Microsecond),
 				},
 				{
-					TLCC:      2,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{},
-					RTT:       0,
+					SequenceNumber: 2,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{},
 				},
 				{
-					TLCC:      3,
-					Size:      0,
-					Departure: time.Time{},
-					Arrival:   time.Time{}.Add(1250 * time.Microsecond),
-					RTT:       0,
+					SequenceNumber: 3,
+					Size:           0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{}.Add(1250 * time.Microsecond),
 				},
 			},
 			n:       5,
@@ -438,14 +411,14 @@ func TestUnpackStatusVectorChunk(t *testing.T) {
 				assert.NoError(t, fa.OnSent(time.Time{}, h, 0, attributes))
 			}
 
-			n, refTime, acks, err := fa.unpackStatusVectorChunk(time.Time{}, tc.start, time.Time{}, &tc.chunk, tc.deltas)
+			n, refTime, acks, err := fa.unpackStatusVectorChunk(tc.start, time.Time{}, &tc.chunk, tc.deltas)
 			assert.NoError(t, err)
 			assert.Len(t, acks, len(tc.acks))
 			assert.Equal(t, tc.n, n)
 			assert.Equal(t, tc.refTime, refTime)
 
 			for i, a := range acks {
-				assert.Equal(t, tc.sentTLCC[i], a.TLCC)
+				assert.Equal(t, tc.sentTLCC[i], a.SequenceNumber)
 			}
 			assert.Equal(t, tc.acks, acks)
 		})
@@ -453,6 +426,8 @@ func TestUnpackStatusVectorChunk(t *testing.T) {
 }
 
 func getPacketWithTransportCCExt(t *testing.T, sequenceNumber uint16) *rtp.Packet {
+	t.Helper()
+
 	pkt := rtp.Packet{
 		Header:  rtp.Header{},
 		Payload: []byte{},
@@ -463,9 +438,11 @@ func getPacketWithTransportCCExt(t *testing.T, sequenceNumber uint16) *rtp.Packe
 	b, err := ext.Marshal()
 	assert.NoError(t, err)
 	assert.NoError(t, pkt.SetExtension(hdrExtID, b))
+
 	return &pkt
 }
 
+//nolint:maintidx,cyclop
 func TestFeedbackAdapterTWCC(t *testing.T) {
 	t.Run("empty", func(t *testing.T) {
 		adapter := NewFeedbackAdapter()
@@ -481,7 +458,10 @@ func TestFeedbackAdapterTWCC(t *testing.T) {
 		for i := uint16(0); i < 22; i++ {
 			pkt := getPacketWithTransportCCExt(t, i)
 			headers = append(headers, pkt.Header)
-			assert.NoError(t, adapter.OnSent(t0, &pkt.Header, 1200, interceptor.Attributes{TwccExtensionAttributesKey: hdrExtID}))
+			assert.NoError(
+				t,
+				adapter.OnSent(t0, &pkt.Header, 1200, interceptor.Attributes{TwccExtensionAttributesKey: hdrExtID}),
+			)
 		}
 		results, err := adapter.OnTransportCCFeedback(t0, &rtcp.TransportLayerCC{
 			Header:             rtcp.Header{},
@@ -559,55 +539,49 @@ func TestFeedbackAdapterTWCC(t *testing.T) {
 		assert.Len(t, results, 22)
 
 		assert.Contains(t, results, Acknowledgment{
-			TLCC:      0,
-			Size:      headers[0].MarshalSize() + 1200,
-			Departure: t0,
-			Arrival:   t0.Add(4 * time.Microsecond),
-			RTT:       0,
+			SequenceNumber: 0,
+			Size:           headers[0].MarshalSize() + 1200,
+			Departure:      t0,
+			Arrival:        t0.Add(4 * time.Microsecond),
 		})
 
 		assert.Contains(t, results, Acknowledgment{
-			TLCC:      1,
-			Size:      headers[1].MarshalSize() + 1200,
-			Departure: t0,
-			Arrival:   t0.Add(104 * time.Microsecond),
-			RTT:       0,
+			SequenceNumber: 1,
+			Size:           headers[1].MarshalSize() + 1200,
+			Departure:      t0,
+			Arrival:        t0.Add(104 * time.Microsecond),
 		})
 
 		for i := uint16(2); i < 7; i++ {
 			assert.Contains(t, results, Acknowledgment{
-				TLCC:      i,
-				Size:      headers[i].MarshalSize() + 1200,
-				Departure: t0,
-				Arrival:   time.Time{},
-				RTT:       0,
+				SequenceNumber: i,
+				Size:           headers[i].MarshalSize() + 1200,
+				Departure:      t0,
+				Arrival:        time.Time{},
 			})
 		}
 
 		assert.Contains(t, results, Acknowledgment{
-			TLCC:      7,
-			Size:      headers[7].MarshalSize() + 1200,
-			Departure: t0,
-			Arrival:   t0.Add(116 * time.Microsecond),
-			RTT:       0,
+			SequenceNumber: 7,
+			Size:           headers[7].MarshalSize() + 1200,
+			Departure:      t0,
+			Arrival:        t0.Add(116 * time.Microsecond),
 		})
 
 		for i := uint16(8); i < 21; i++ {
 			assert.Contains(t, results, Acknowledgment{
-				TLCC:      i,
-				Size:      headers[i].MarshalSize() + 1200,
-				Departure: t0,
-				Arrival:   time.Time{},
-				RTT:       0,
+				SequenceNumber: i,
+				Size:           headers[i].MarshalSize() + 1200,
+				Departure:      t0,
+				Arrival:        time.Time{},
 			})
 		}
 
 		assert.Contains(t, results, Acknowledgment{
-			TLCC:      21,
-			Size:      headers[21].MarshalSize() + 1200,
-			Departure: t0,
-			Arrival:   t0.Add(120 * time.Microsecond),
-			RTT:       0,
+			SequenceNumber: 21,
+			Size:           headers[21].MarshalSize() + 1200,
+			Departure:      t0,
+			Arrival:        t0.Add(120 * time.Microsecond),
 		})
 	})
 
@@ -654,8 +628,14 @@ func TestFeedbackAdapterTWCC(t *testing.T) {
 		adapter := NewFeedbackAdapter()
 		pkt65535 := getPacketWithTransportCCExt(t, 65535)
 		pkt0 := getPacketWithTransportCCExt(t, 0)
-		assert.NoError(t, adapter.OnSent(t0, &pkt65535.Header, 1200, interceptor.Attributes{TwccExtensionAttributesKey: hdrExtID}))
-		assert.NoError(t, adapter.OnSent(t0, &pkt0.Header, 1200, interceptor.Attributes{TwccExtensionAttributesKey: hdrExtID}))
+		assert.NoError(
+			t,
+			adapter.OnSent(t0, &pkt65535.Header, 1200, interceptor.Attributes{TwccExtensionAttributesKey: hdrExtID}),
+		)
+		assert.NoError(
+			t,
+			adapter.OnSent(t0, &pkt0.Header, 1200, interceptor.Attributes{TwccExtensionAttributesKey: hdrExtID}),
+		)
 
 		results, err := adapter.OnTransportCCFeedback(t0, &rtcp.TransportLayerCC{
 			Header:             rtcp.Header{},
@@ -697,18 +677,16 @@ func TestFeedbackAdapterTWCC(t *testing.T) {
 		assert.NotEmpty(t, results)
 		assert.Len(t, results, 7)
 		assert.Contains(t, results, Acknowledgment{
-			TLCC:      65535,
-			Size:      pkt65535.Header.MarshalSize() + 1200,
-			Departure: t0,
-			Arrival:   t0.Add(4 * time.Microsecond),
-			RTT:       0,
+			SequenceNumber: 65535,
+			Size:           pkt65535.Header.MarshalSize() + 1200,
+			Departure:      t0,
+			Arrival:        t0.Add(4 * time.Microsecond),
 		})
 		assert.Contains(t, results, Acknowledgment{
-			TLCC:      0,
-			Size:      pkt0.Header.MarshalSize() + 1200,
-			Departure: t0,
-			Arrival:   t0.Add(8 * time.Microsecond),
-			RTT:       0,
+			SequenceNumber: 0,
+			Size:           pkt0.Header.MarshalSize() + 1200,
+			Departure:      t0,
+			Arrival:        t0.Add(8 * time.Microsecond),
 		})
 	})
 
@@ -719,7 +697,10 @@ func TestFeedbackAdapterTWCC(t *testing.T) {
 		for i := uint16(0); i < 8; i++ {
 			pkt := getPacketWithTransportCCExt(t, i)
 			headers = append(headers, pkt.Header)
-			assert.NoError(t, adapter.OnSent(t0, &pkt.Header, 1200, interceptor.Attributes{TwccExtensionAttributesKey: hdrExtID}))
+			assert.NoError(
+				t,
+				adapter.OnSent(t0, &pkt.Header, 1200, interceptor.Attributes{TwccExtensionAttributesKey: hdrExtID}),
+			)
 		}
 
 		results, err := adapter.OnTransportCCFeedback(t0, &rtcp.TransportLayerCC{
@@ -765,20 +746,18 @@ func TestFeedbackAdapterTWCC(t *testing.T) {
 		assert.Len(t, results, 7)
 		for i := uint16(0); i < 3; i++ {
 			assert.Contains(t, results, Acknowledgment{
-				TLCC:      i,
-				Size:      headers[i].MarshalSize() + 1200,
-				Departure: t0,
-				Arrival:   t0.Add(time.Duration((i + 1)) * 4 * time.Microsecond),
-				RTT:       0,
+				SequenceNumber: i,
+				Size:           headers[i].MarshalSize() + 1200,
+				Departure:      t0,
+				Arrival:        t0.Add(time.Duration((i + 1)) * 4 * time.Microsecond),
 			})
 		}
 		for i := uint16(3); i < 7; i++ {
 			assert.Contains(t, results, Acknowledgment{
-				TLCC:      i,
-				Size:      headers[i].MarshalSize() + 1200,
-				Departure: t0,
-				Arrival:   time.Time{},
-				RTT:       0,
+				SequenceNumber: i,
+				Size:           headers[i].MarshalSize() + 1200,
+				Departure:      t0,
+				Arrival:        time.Time{},
 			})
 		}
 	})
@@ -788,7 +767,10 @@ func TestFeedbackAdapterTWCC(t *testing.T) {
 		t0 := time.Time{}
 		for i := uint16(0); i < 20; i++ {
 			pkt := getPacketWithTransportCCExt(t, i)
-			assert.NoError(t, adapter.OnSent(t0, &pkt.Header, 1200, interceptor.Attributes{TwccExtensionAttributesKey: hdrExtID}))
+			assert.NoError(
+				t,
+				adapter.OnSent(t0, &pkt.Header, 1200, interceptor.Attributes{TwccExtensionAttributesKey: hdrExtID}),
+			)
 		}
 		packets, err := adapter.OnTransportCCFeedback(t0, &rtcp.TransportLayerCC{
 			Header:             rtcp.Header{},
@@ -829,7 +811,10 @@ func TestFeedbackAdapterTWCC(t *testing.T) {
 		t0 := time.Time{}
 		for i := uint16(0); i < 20; i++ {
 			pkt := getPacketWithTransportCCExt(t, i)
-			assert.NoError(t, adapter.OnSent(t0, &pkt.Header, 1200, interceptor.Attributes{TwccExtensionAttributesKey: hdrExtID}))
+			assert.NoError(
+				t,
+				adapter.OnSent(t0, &pkt.Header, 1200, interceptor.Attributes{TwccExtensionAttributesKey: hdrExtID}),
+			)
 		}
 		packets, err := adapter.OnTransportCCFeedback(t0, &rtcp.TransportLayerCC{
 			Header:             rtcp.Header{},
@@ -886,7 +871,10 @@ func TestFeedbackAdapterTWCC(t *testing.T) {
 		t0 := time.Time{}
 		for i := uint16(0); i < 20; i++ {
 			pkt := getPacketWithTransportCCExt(t, i)
-			assert.NoError(t, adapter.OnSent(t0, &pkt.Header, 1200, interceptor.Attributes{TwccExtensionAttributesKey: hdrExtID}))
+			assert.NoError(
+				t,
+				adapter.OnSent(t0, &pkt.Header, 1200, interceptor.Attributes{TwccExtensionAttributesKey: hdrExtID}),
+			)
 		}
 
 		//nolint:dupl
@@ -953,7 +941,10 @@ func TestFeedbackAdapterTWCC(t *testing.T) {
 		t0 := time.Time{}
 		for i := uint16(1008); i < 1030; i++ {
 			pkt := getPacketWithTransportCCExt(t, i)
-			assert.NoError(t, adapter.OnSent(t0, &pkt.Header, 1200, interceptor.Attributes{TwccExtensionAttributesKey: hdrExtID}))
+			assert.NoError(
+				t,
+				adapter.OnSent(t0, &pkt.Header, 1200, interceptor.Attributes{TwccExtensionAttributesKey: hdrExtID}),
+			)
 		}
 
 		//nolint:dupl

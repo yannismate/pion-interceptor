@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 package gcc
 
 import (
@@ -23,39 +26,35 @@ func TestRateCalculator(t *testing.T) {
 		{
 			name: "ignoresZeroArrivalTimes",
 			acks: []cc.Acknowledgment{{
-				TLCC:      0,
-				Size:      0,
-				Departure: time.Time{},
-				Arrival:   time.Time{},
-				RTT:       0,
+				SequenceNumber: 0,
+				Size:           0,
+				Departure:      time.Time{},
+				Arrival:        time.Time{},
 			}},
 			expected: []int{},
 		},
 		{
 			name: "singleAckCreatesRate",
 			acks: []cc.Acknowledgment{{
-				TLCC:      0,
-				Size:      1000,
-				Departure: time.Time{},
-				Arrival:   t0,
-				RTT:       0,
+				SequenceNumber: 0,
+				Size:           1000,
+				Departure:      time.Time{},
+				Arrival:        t0,
 			}},
 			expected: []int{8000},
 		},
 		{
 			name: "twoAcksCalculateCorrectRates",
 			acks: []cc.Acknowledgment{{
-				TLCC:      0,
-				Size:      125,
-				Departure: time.Time{},
-				Arrival:   t0,
-				RTT:       0,
+				SequenceNumber: 0,
+				Size:           125,
+				Departure:      time.Time{},
+				Arrival:        t0,
 			}, {
-				TLCC:      0,
-				Size:      125,
-				Departure: time.Time{},
-				Arrival:   t0.Add(100 * time.Millisecond),
-				RTT:       0,
+				SequenceNumber: 0,
+				Size:           125,
+				Departure:      time.Time{},
+				Arrival:        t0.Add(100 * time.Millisecond),
 			}},
 			expected: []int{1000, 20_000},
 		},
@@ -80,15 +79,18 @@ func TestRateCalculator(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			rc := rateCalculator{
-				window: 500 * time.Millisecond,
+			rc := newRateCalculator(500 * time.Millisecond)
+			in := make(chan []cc.Acknowledgment)
+			out := make(chan int)
+			onRateUpdate := func(rate int) {
+				out <- rate
 			}
-			in := make(chan cc.Acknowledgment)
-			out := rc.run(in)
 			go func() {
-				for _, ack := range tc.acks {
-					in <- ack
-				}
+				defer close(out)
+				rc.run(in, onRateUpdate)
+			}()
+			go func() {
+				in <- tc.acks
 				close(in)
 			}()
 
@@ -111,5 +113,6 @@ func getACKStream(length int, size int, interval time.Duration) []cc.Acknowledgm
 		})
 		t0 = t0.Add(interval)
 	}
+
 	return res
 }

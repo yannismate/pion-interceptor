@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 package gcc
 
 import (
@@ -39,11 +42,10 @@ func TestSlopeEstimator(t *testing.T) {
 					Measurement:      0,
 					Estimate:         0,
 					Threshold:        0,
-					lastReceiveDelta: 5 * time.Millisecond,
+					LastReceiveDelta: 5 * time.Millisecond,
 					Usage:            0,
 					State:            0,
 					TargetBitrate:    0,
-					RTT:              0,
 				},
 			},
 		},
@@ -68,21 +70,19 @@ func TestSlopeEstimator(t *testing.T) {
 					Measurement:      0,
 					Estimate:         0,
 					Threshold:        0,
-					lastReceiveDelta: 5 * time.Millisecond,
+					LastReceiveDelta: 5 * time.Millisecond,
 					Usage:            0,
 					State:            0,
 					TargetBitrate:    0,
-					RTT:              0,
 				},
 				{
 					Measurement:      -5 * time.Millisecond,
 					Estimate:         -5 * time.Millisecond,
 					Threshold:        0,
-					lastReceiveDelta: 5 * time.Millisecond,
+					LastReceiveDelta: 5 * time.Millisecond,
 					Usage:            0,
 					State:            0,
 					TargetBitrate:    0,
-					RTT:              0,
 				},
 			},
 		},
@@ -91,15 +91,16 @@ func TestSlopeEstimator(t *testing.T) {
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			se := newSlopeEstimator(estimatorFunc(identity))
-			in := make(chan arrivalGroup)
-			out := se.run(in)
+			out := make(chan DelayStats)
+			se := newSlopeEstimator(estimatorFunc(identity), func(ds DelayStats) {
+				out <- ds
+			})
 			input := []time.Duration{}
 			go func() {
+				defer close(out)
 				for _, ag := range tc.ags {
-					in <- ag
+					se.onArrivalGroup(ag)
 				}
-				close(in)
 			}()
 			received := []DelayStats{}
 			for d := range out {

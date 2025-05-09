@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 package report
 
 import (
@@ -9,14 +12,14 @@ import (
 	"github.com/pion/rtcp"
 )
 
-// ReceiverInterceptorFactory is a interceptor.Factory for a ReceiverInterceptor
+// ReceiverInterceptorFactory is a interceptor.Factory for a ReceiverInterceptor.
 type ReceiverInterceptorFactory struct {
 	opts []ReceiverOption
 }
 
-// NewInterceptor constructs a new ReceiverInterceptor
-func (r *ReceiverInterceptorFactory) NewInterceptor(id string) (interceptor.Interceptor, error) {
-	i := &ReceiverInterceptor{
+// NewInterceptor constructs a new ReceiverInterceptor.
+func (r *ReceiverInterceptorFactory) NewInterceptor(_ string) (interceptor.Interceptor, error) {
+	receiverInterceptor := &ReceiverInterceptor{
 		interval: 1 * time.Second,
 		now:      time.Now,
 		log:      logging.NewDefaultLoggerFactory().NewLogger("receiver_interceptor"),
@@ -24,15 +27,15 @@ func (r *ReceiverInterceptorFactory) NewInterceptor(id string) (interceptor.Inte
 	}
 
 	for _, opt := range r.opts {
-		if err := opt(i); err != nil {
+		if err := opt(receiverInterceptor); err != nil {
 			return nil, err
 		}
 	}
 
-	return i, nil
+	return receiverInterceptor, nil
 }
 
-// NewReceiverInterceptor returns a new ReceiverInterceptorFactory
+// NewReceiverInterceptor returns a new ReceiverInterceptorFactory.
 func NewReceiverInterceptor(opts ...ReceiverOption) (*ReceiverInterceptorFactory, error) {
 	return &ReceiverInterceptorFactory{opts}, nil
 }
@@ -97,10 +100,12 @@ func (r *ReceiverInterceptor) loop(rtcpWriter interceptor.RTCPWriter) {
 		select {
 		case <-ticker.C:
 			now := r.now()
-			r.streams.Range(func(key, value interface{}) bool {
+			r.streams.Range(func(_, value interface{}) bool {
 				if stream, ok := value.(*receiverStream); !ok {
 					r.log.Warnf("failed to cast ReceiverInterceptor stream")
-				} else if _, err := rtcpWriter.Write([]rtcp.Packet{stream.generateReport(now)}, interceptor.Attributes{}); err != nil {
+				} else if _, err := rtcpWriter.Write(
+					[]rtcp.Packet{stream.generateReport(now)}, interceptor.Attributes{},
+				); err != nil {
 					r.log.Warnf("failed sending: %+v", err)
 				}
 
@@ -113,9 +118,11 @@ func (r *ReceiverInterceptor) loop(rtcpWriter interceptor.RTCPWriter) {
 	}
 }
 
-// BindRemoteStream lets you modify any incoming RTP packets. It is called once for per RemoteStream. The returned method
-// will be called once per rtp packet.
-func (r *ReceiverInterceptor) BindRemoteStream(info *interceptor.StreamInfo, reader interceptor.RTPReader) interceptor.RTPReader {
+// BindRemoteStream lets you modify any incoming RTP packets. It is called once for per RemoteStream.
+// The returned method will be called once per rtp packet.
+func (r *ReceiverInterceptor) BindRemoteStream(
+	info *interceptor.StreamInfo, reader interceptor.RTPReader,
+) interceptor.RTPReader {
 	stream := newReceiverStream(info.SSRC, info.ClockRate)
 	r.streams.Store(info.SSRC, stream)
 
@@ -139,8 +146,8 @@ func (r *ReceiverInterceptor) BindRemoteStream(info *interceptor.StreamInfo, rea
 	})
 }
 
-// UnbindLocalStream is called when the Stream is removed. It can be used to clean up any data related to that track.
-func (r *ReceiverInterceptor) UnbindLocalStream(info *interceptor.StreamInfo) {
+// UnbindRemoteStream is called when the Stream is removed. It can be used to clean up any data related to that track.
+func (r *ReceiverInterceptor) UnbindRemoteStream(info *interceptor.StreamInfo) {
 	r.streams.Delete(info.SSRC)
 }
 

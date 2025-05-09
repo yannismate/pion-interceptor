@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 // Package mock provides mock Interceptor for testing.
 package mock
 
@@ -23,6 +26,7 @@ func (i *Interceptor) BindRTCPReader(reader interceptor.RTCPReader) interceptor.
 	if i.BindRTCPReaderFn != nil {
 		return i.BindRTCPReaderFn(reader)
 	}
+
 	return reader
 }
 
@@ -31,14 +35,18 @@ func (i *Interceptor) BindRTCPWriter(writer interceptor.RTCPWriter) interceptor.
 	if i.BindRTCPWriterFn != nil {
 		return i.BindRTCPWriterFn(writer)
 	}
+
 	return writer
 }
 
 // BindLocalStream implements Interceptor.
-func (i *Interceptor) BindLocalStream(info *interceptor.StreamInfo, writer interceptor.RTPWriter) interceptor.RTPWriter {
+func (i *Interceptor) BindLocalStream(
+	info *interceptor.StreamInfo, writer interceptor.RTPWriter,
+) interceptor.RTPWriter {
 	if i.BindLocalStreamFn != nil {
 		return i.BindLocalStreamFn(info, writer)
 	}
+
 	return writer
 }
 
@@ -50,10 +58,13 @@ func (i *Interceptor) UnbindLocalStream(info *interceptor.StreamInfo) {
 }
 
 // BindRemoteStream implements Interceptor.
-func (i *Interceptor) BindRemoteStream(info *interceptor.StreamInfo, reader interceptor.RTPReader) interceptor.RTPReader {
+func (i *Interceptor) BindRemoteStream(
+	info *interceptor.StreamInfo, reader interceptor.RTPReader,
+) interceptor.RTPReader {
 	if i.BindRemoteStreamFn != nil {
 		return i.BindRemoteStreamFn(info, reader)
 	}
+
 	return reader
 }
 
@@ -69,6 +80,7 @@ func (i *Interceptor) Close() error {
 	if i.CloseFn != nil {
 		return i.CloseFn()
 	}
+
 	return nil
 }
 

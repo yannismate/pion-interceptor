@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 // Package cc implements an interceptor for bandwidth estimation that can be
 // used with different BandwidthEstimators.
 package cc
@@ -5,16 +8,13 @@ package cc
 import (
 	"github.com/pion/interceptor"
 	"github.com/pion/interceptor/pkg/gcc"
-	"github.com/pion/logging"
 	"github.com/pion/rtcp"
 )
 
-const transportCCURI = "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01"
-
-// Option can be used to set initial options on CC interceptors
+// Option can be used to set initial options on CC interceptors.
 type Option func(*Interceptor) error
 
-// BandwidthEstimatorFactory creates new BandwidthEstimators
+// BandwidthEstimatorFactory creates new BandwidthEstimators.
 type BandwidthEstimatorFactory func() (BandwidthEstimator, error)
 
 // BandwidthEstimator is the interface that will be returned by a
@@ -30,23 +30,24 @@ type BandwidthEstimator interface {
 }
 
 // NewPeerConnectionCallback returns the BandwidthEstimator for the
-// PeerConnection with id
+// PeerConnection with id.
 type NewPeerConnectionCallback func(id string, estimator BandwidthEstimator)
 
-// InterceptorFactory is a factory for CC interceptors
+// InterceptorFactory is a factory for CC interceptors.
 type InterceptorFactory struct {
 	opts              []Option
 	bweFactory        func() (BandwidthEstimator, error)
 	addPeerConnection NewPeerConnectionCallback
 }
 
-// NewInterceptor returns a new CC interceptor factory
+// NewInterceptor returns a new CC interceptor factory.
 func NewInterceptor(factory BandwidthEstimatorFactory, opts ...Option) (*InterceptorFactory, error) {
 	if factory == nil {
 		factory = func() (BandwidthEstimator, error) {
 			return gcc.NewSendSideBWE()
 		}
 	}
+
 	return &InterceptorFactory{
 		opts:              opts,
 		bweFactory:        factory,
@@ -60,36 +61,35 @@ func (f *InterceptorFactory) OnNewPeerConnection(cb NewPeerConnectionCallback) {
 	f.addPeerConnection = cb
 }
 
-// NewInterceptor returns a new CC interceptor
+// NewInterceptor returns a new CC interceptor.
 func (f *InterceptorFactory) NewInterceptor(id string) (interceptor.Interceptor, error) {
 	bwe, err := f.bweFactory()
 	if err != nil {
 		return nil, err
 	}
-	i := &Interceptor{
+	interceptorInstance := &Interceptor{
 		NoOp:      interceptor.NoOp{},
-		log:       logging.NewDefaultLoggerFactory().NewLogger("cc_interceptor"),
 		estimator: bwe,
 		feedback:  make(chan []rtcp.Packet),
 		close:     make(chan struct{}),
 	}
 
 	for _, opt := range f.opts {
-		if err := opt(i); err != nil {
+		if err := opt(interceptorInstance); err != nil {
 			return nil, err
 		}
 	}
 
 	if f.addPeerConnection != nil {
-		f.addPeerConnection(id, i.estimator)
+		f.addPeerConnection(id, interceptorInstance.estimator)
 	}
-	return i, nil
+
+	return interceptorInstance, nil
 }
 
-// Interceptor implements Google Congestion Control
+// Interceptor implements Google Congestion Control.
 type Interceptor struct {
 	interceptor.NoOp
-	log       logging.LeveledLogger
 	estimator BandwidthEstimator
 	feedback  chan []rtcp.Packet
 	close     chan struct{}
@@ -126,18 +126,9 @@ func (c *Interceptor) BindRTCPReader(reader interceptor.RTCPReader) interceptor.
 
 // BindLocalStream lets you modify any outgoing RTP packets. It is called once
 // for per LocalStream. The returned method will be called once per rtp packet.
-func (c *Interceptor) BindLocalStream(info *interceptor.StreamInfo, writer interceptor.RTPWriter) interceptor.RTPWriter {
-	var hdrExtID uint8
-	for _, e := range info.RTPHeaderExtensions {
-		if e.URI == transportCCURI {
-			hdrExtID = uint8(e.ID)
-			break
-		}
-	}
-	if hdrExtID == 0 { // Nothing to do if header extension ID is 0, because 0 is an invalid extension ID. Means stream is not using TWCC.
-		return writer
-	}
-
+func (c *Interceptor) BindLocalStream(
+	info *interceptor.StreamInfo, writer interceptor.RTPWriter,
+) interceptor.RTPWriter {
 	return c.estimator.AddStream(info, writer)
 }
 

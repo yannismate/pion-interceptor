@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 package gcc
 
 import (
@@ -63,6 +66,7 @@ func newKalman(opts ...kalmanOption) *kalman {
 	for _, opt := range opts {
 		opt(k)
 	}
+
 	return k
 }
 
@@ -77,8 +81,9 @@ func (k *kalman) updateEstimate(measurement time.Duration) time.Duration {
 		root3 := 3 * root
 		if zms > root3 {
 			k.measurementUncertainty = math.Max(alpha*k.measurementUncertainty+(1-alpha)*root3*root3, 1)
+		} else {
+			k.measurementUncertainty = math.Max(alpha*k.measurementUncertainty+(1-alpha)*zms*zms, 1)
 		}
-		k.measurementUncertainty = math.Max(alpha*k.measurementUncertainty+(1-alpha)*zms*zms, 1)
 	}
 
 	estimateUncertainty := k.estimateError + k.processUncertainty
@@ -87,5 +92,6 @@ func (k *kalman) updateEstimate(measurement time.Duration) time.Duration {
 	k.estimate += time.Duration(k.gain * zms * float64(time.Millisecond))
 
 	k.estimateError = (1 - k.gain) * estimateUncertainty
+
 	return k.estimate
 }

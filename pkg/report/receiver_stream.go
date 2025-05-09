@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 package report
 
 import (
@@ -7,6 +10,13 @@ import (
 
 	"github.com/pion/rtcp"
 	"github.com/pion/rtp"
+)
+
+const (
+	// packetsPerHistoryEntry represents how many packets are in the bitmask for
+	// each entry in the `packets` slice in the receiver stream. Because we use
+	// a uint64, we can keep track of 64 packets per entry.
+	packetsPerHistoryEntry = 64
 )
 
 type receiverStream struct {
@@ -31,6 +41,7 @@ type receiverStream struct {
 
 func newReceiverStream(ssrc uint32, clockRate uint32) *receiverStream {
 	receiverSSRC := rand.Uint32() // #nosec
+
 	return &receiverStream{
 		ssrc:         ssrc,
 		receiverSSRC: receiverSSRC,
@@ -44,6 +55,7 @@ func (stream *receiverStream) processRTP(now time.Time, pktHeader *rtp.Header) {
 	stream.m.Lock()
 	defer stream.m.Unlock()
 
+	//nolint:nestif
 	if !stream.started { // first frame
 		stream.started = true
 		stream.setReceived(pktHeader.SequenceNumber)
@@ -54,10 +66,10 @@ func (stream *receiverStream) processRTP(now time.Time, pktHeader *rtp.Header) {
 	} else { // following frames
 		stream.setReceived(pktHeader.SequenceNumber)
 
-		diff := int32(pktHeader.SequenceNumber) - int32(stream.lastSeqnum)
-		if diff > 0 || diff < -0x0FFF {
-			// overflow
-			if diff < -0x0FFF {
+		diff := pktHeader.SequenceNumber - stream.lastSeqnum
+		if diff > 0 && diff < (1<<15) {
+			// wrap around
+			if pktHeader.SequenceNumber < stream.lastSeqnum {
 				stream.seqnumCycles++
 			}
 
@@ -83,25 +95,26 @@ func (stream *receiverStream) processRTP(now time.Time, pktHeader *rtp.Header) {
 }
 
 func (stream *receiverStream) setReceived(seq uint16) {
-	pos := seq % stream.size
-	stream.packets[pos/64] |= 1 << (pos % 64)
+	pos := seq % (stream.size * packetsPerHistoryEntry)
+	stream.packets[pos/packetsPerHistoryEntry] |= 1 << (pos % packetsPerHistoryEntry)
 }
 
 func (stream *receiverStream) delReceived(seq uint16) {
-	pos := seq % stream.size
-	stream.packets[pos/64] &^= 1 << (pos % 64)
+	pos := seq % (stream.size * packetsPerHistoryEntry)
+	stream.packets[pos/packetsPerHistoryEntry] &^= 1 << (pos % packetsPerHistoryEntry)
 }
 
 func (stream *receiverStream) getReceived(seq uint16) bool {
-	pos := seq % stream.size
-	return (stream.packets[pos/64] & (1 << (pos % 64))) != 0
+	pos := seq % (stream.size * packetsPerHistoryEntry)
+
+	return (stream.packets[pos/packetsPerHistoryEntry] & (1 << (pos % packetsPerHistoryEntry))) != 0
 }
 
 func (stream *receiverStream) processSenderReport(now time.Time, sr *rtcp.SenderReport) {
 	stream.m.Lock()
 	defer stream.m.Unlock()
 
-	stream.lastSenderReport = uint32(sr.NTPTime >> 16)
+	stream.lastSenderReport = uint32(sr.NTPTime >> 16) //nolint:gosec // G115
 	stream.lastSenderReportTime = now
 }
 
@@ -121,6 +134,7 @@ func (stream *receiverStream) generateReport(now time.Time) *rtcp.ReceiverReport
 				ret++
 			}
 		}
+
 		return ret
 	}()
 	stream.totalLost += totalLostSinceReport
@@ -133,7 +147,7 @@ func (stream *receiverStream) generateReport(now time.Time) *rtcp.ReceiverReport
 		stream.totalLost = 0xFFFFFF
 	}
 
-	r := &rtcp.ReceiverReport{
+	receiverReport := &rtcp.ReceiverReport{
 		SSRC: stream.receiverSSRC,
 		Reports: []rtcp.ReceptionReport{
 			{
@@ -146,6 +160,7 @@ func (stream *receiverStream) generateReport(now time.Time) *rtcp.ReceiverReport
 					if stream.lastSenderReportTime.IsZero() {
 						return 0
 					}
+
 					return uint32(now.Sub(stream.lastSenderReportTime).Seconds() * 65536)
 				}(),
 				Jitter: uint32(stream.jitter),
@@ -155,5 +170,5 @@ func (stream *receiverStream) generateReport(now time.Time) *rtcp.ReceiverReport
 
 	stream.lastReportSeqnum = stream.lastSeqnum
 
-	return r
+	return receiverReport
 }

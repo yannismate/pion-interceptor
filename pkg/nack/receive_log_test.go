@@ -1,26 +1,32 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 package nack
 
 import (
 	"fmt"
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
+//nolint:cyclop
 func TestReceivedBuffer(t *testing.T) {
-	for _, start := range []uint16{0, 1, 127, 128, 129, 511, 512, 513, 32767, 32768, 32769, 65407, 65408, 65409, 65534, 65535} {
+	for _, start := range []uint16{
+		0, 1, 127, 128, 129, 511, 512, 513, 32767, 32768, 32769, 65407, 65408, 65409, 65534, 65535,
+	} {
 		start := start
 
 		t.Run(fmt.Sprintf("StartFrom%d", start), func(t *testing.T) {
 			rl, err := newReceiveLog(128)
-			if err != nil {
-				t.Fatalf("%+v", err)
-			}
+			assert.NoError(t, err)
 
-			all := func(min uint16, max uint16) []uint16 {
+			all := func(minVal uint16, maxVal uint16) []uint16 {
 				result := make([]uint16, 0)
-				for i := min; i != max+1; i++ {
+				for i := minVal; i != maxVal+1; i++ {
 					result = append(result, i)
 				}
+
 				return result
 			}
 			join := func(parts ...[]uint16) []uint16 {
@@ -28,6 +34,7 @@ func TestReceivedBuffer(t *testing.T) {
 				for _, p := range parts {
 					result = append(result, p...)
 				}
+
 				return result
 			}
 
@@ -42,18 +49,14 @@ func TestReceivedBuffer(t *testing.T) {
 				t.Helper()
 				for _, n := range nums {
 					seq := start + n
-					if !rl.get(seq) {
-						t.Errorf("not found: %d", seq)
-					}
+					assert.True(t, rl.get(seq), "packet not found: %d", seq)
 				}
 			}
 			assertNOTGet := func(nums ...uint16) {
 				t.Helper()
 				for _, n := range nums {
 					seq := start + n
-					if rl.get(seq) {
-						t.Errorf("packet found for %d", seq)
-					}
+					assert.False(t, rl.get(seq), "packet found for %d", seq)
 				}
 			}
 			assertMissing := func(skipLastN uint16, nums []uint16) {
@@ -66,15 +69,11 @@ func TestReceivedBuffer(t *testing.T) {
 				for _, n := range nums {
 					want = append(want, start+n)
 				}
-				if !reflect.DeepEqual(want, missing) {
-					t.Errorf("missing want/got %v / %v", want, missing)
-				}
+				assert.Equal(t, want, missing, "missing packets don't match")
 			}
 			assertLastConsecutive := func(lastConsecutive uint16) {
 				want := lastConsecutive + start
-				if rl.lastConsecutive != want {
-					t.Errorf("invalid lastConsecutive want %d got %d", want, rl.lastConsecutive)
-				}
+				assert.Equal(t, want, rl.lastConsecutive, "lastConsecutive doesn't match")
 			}
 
 			add(0)

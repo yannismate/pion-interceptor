@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 package interceptor
 
 import (
@@ -15,6 +18,7 @@ func flattenErrs(errs []error) error {
 	if len(errs2) == 0 {
 		return nil
 	}
+
 	return multiError(errs2)
 }
 
@@ -47,5 +51,6 @@ func (me multiError) Is(err error) bool {
 			}
 		}
 	}
+
 	return false
 }

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 package gcc
 
 import (
@@ -28,7 +31,7 @@ func setInitialThreshold(t time.Duration) adaptiveThresholdOption {
 // See https://datatracker.ietf.org/doc/html/draft-ietf-rmcat-gcc-02#section-5.4
 // or [Analysis and Design of the Google Congestion Control for Web Real-time
 // Communication (WebRTC)](https://c3lab.poliba.it/images/6/65/Gcc-analysis.pdf)
-// for a more detailed description
+// for a more detailed description.
 type adaptiveThreshold struct {
 	thresh                 time.Duration
 	overuseCoefficientUp   float64
@@ -40,7 +43,7 @@ type adaptiveThreshold struct {
 }
 
 // newAdaptiveThreshold initializes a new adaptiveThreshold with default
-// values taken from draft-ietf-rmcat-gcc-02
+// values taken from draft-ietf-rmcat-gcc-02.
 func newAdaptiveThreshold(opts ...adaptiveThresholdOption) *adaptiveThreshold {
 	at := &adaptiveThreshold{
 		thresh:                 time.Duration(12500 * float64(time.Microsecond)),
@@ -54,10 +57,11 @@ func newAdaptiveThreshold(opts ...adaptiveThresholdOption) *adaptiveThreshold {
 	for _, opt := range opts {
 		opt(at)
 	}
+
 	return at
 }
 
-func (a *adaptiveThreshold) compare(estimate, dt time.Duration) (usage, time.Duration, time.Duration) {
+func (a *adaptiveThreshold) compare(estimate, _ time.Duration) (usage, time.Duration, time.Duration) {
 	a.numDeltas++
 	if a.numDeltas < 2 {
 		return usageNormal, estimate, a.max
@@ -71,6 +75,7 @@ func (a *adaptiveThreshold) compare(estimate, dt time.Duration) (usage, time.Dur
 	}
 	thresh := a.thresh
 	a.update(t)
+
 	return use, t, thresh
 }
 
@@ -82,6 +87,7 @@ func (a *adaptiveThreshold) update(estimate time.Duration) {
 	absEstimate := time.Duration(math.Abs(float64(estimate.Microseconds()))) * time.Microsecond
 	if absEstimate > a.thresh+15*time.Millisecond {
 		a.lastUpdate = now
+
 		return
 	}
 	k := a.overuseCoefficientUp
@@ -89,10 +95,12 @@ func (a *adaptiveThreshold) update(estimate time.Duration) {
 		k = a.overuseCoefficientDown
 	}
 	maxTimeDelta := 100 * time.Millisecond
-	timeDelta := time.Duration(minInt(int(now.Sub(a.lastUpdate).Milliseconds()), int(maxTimeDelta.Milliseconds()))) * time.Millisecond
+	timeDelta := time.Duration(
+		minInt(int(now.Sub(a.lastUpdate).Milliseconds()), int(maxTimeDelta.Milliseconds())),
+	) * time.Millisecond
 	d := absEstimate - a.thresh
 	add := k * float64(d.Milliseconds()) * float64(timeDelta.Milliseconds())
-	a.thresh += time.Duration(add) * 1000 * time.Microsecond
+	a.thresh += time.Duration(add*1000) * time.Microsecond
 	a.thresh = clampDuration(a.thresh, a.min, a.max)
 	a.lastUpdate = now
 }

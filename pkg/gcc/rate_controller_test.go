@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 package gcc
 
 import (
@@ -30,7 +33,6 @@ func TestRateControllerRun(t *testing.T) {
 				TargetBitrate: 108_000,
 				Estimate:      0,
 				Threshold:     0,
-				RTT:           300 * time.Millisecond,
 			}},
 		},
 	}
@@ -38,31 +40,31 @@ func TestRateControllerRun(t *testing.T) {
 	t0 := time.Time{}
 	mockNoFn := func() time.Time {
 		t0 = t0.Add(100 * time.Millisecond)
+
 		return t0
 	}
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			dc := newRateController(mockNoFn, 100_000, 1_000, 50_000_000)
+			out := make(chan DelayStats)
+			dc := newRateController(mockNoFn, 100_000, 1_000, 50_000_000, func(ds DelayStats) {
+				out <- ds
+			})
 			in := make(chan DelayStats)
-			receivedRate := make(chan int)
-			rtt := make(chan time.Duration)
-			out := dc.run(in, receivedRate, rtt)
-			receivedRate <- 100_000
-			rtt <- 300 * time.Millisecond
+			dc.onReceivedRate(100_000)
+			dc.updateRTT(300 * time.Millisecond)
 			go func() {
+				defer close(out)
 				for _, state := range tc.usage {
-					in <- DelayStats{
+					dc.onDelayStats(DelayStats{
 						Measurement:   0,
 						Estimate:      0,
 						Threshold:     0,
 						Usage:         state,
 						State:         0,
 						TargetBitrate: 0,
-						RTT:           0,
-					}
+					})
 				}
-				time.Sleep(2 * time.Second)
 				close(in)
 			}()
 			received := []DelayStats{}

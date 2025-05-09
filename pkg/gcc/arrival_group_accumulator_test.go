@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 package gcc
 
 import (
@@ -67,7 +70,7 @@ func TestArrivalGroupAccumulator(t *testing.T) {
 					},
 				},
 				arrival:   time.Time{}.Add(20 * time.Millisecond),
-				departure: time.Time{}.Add(3 * time.Millisecond),
+				departure: time.Time{},
 			}},
 		},
 		{
@@ -99,7 +102,7 @@ func TestArrivalGroupAccumulator(t *testing.T) {
 						},
 					},
 					arrival:   time.Time{}.Add(20 * time.Millisecond),
-					departure: time.Time{}.Add(3 * time.Millisecond),
+					departure: time.Time{}.Add(0 * time.Millisecond),
 				},
 				{
 					packets: []cc.Acknowledgment{
@@ -153,18 +156,82 @@ func TestArrivalGroupAccumulator(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "newGroupBecauseOfInterDepartureTime",
+			log: []cc.Acknowledgment{
+				{
+					SequenceNumber: 0,
+					Departure:      time.Time{},
+					Arrival:        time.Time{}.Add(4 * time.Millisecond),
+				},
+				{
+					SequenceNumber: 1,
+					Departure:      time.Time{}.Add(3 * time.Millisecond),
+					Arrival:        time.Time{}.Add(4 * time.Millisecond),
+				},
+				{
+					SequenceNumber: 2,
+					Departure:      time.Time{}.Add(6 * time.Millisecond),
+					Arrival:        time.Time{}.Add(10 * time.Millisecond),
+				},
+				{
+					SequenceNumber: 3,
+					Departure:      time.Time{}.Add(9 * time.Millisecond),
+					Arrival:        time.Time{}.Add(10 * time.Millisecond),
+				},
+				triggerNewGroupElement,
+			},
+			exp: []arrivalGroup{
+				{
+					packets: []cc.Acknowledgment{
+						{
+							SequenceNumber: 0,
+							Departure:      time.Time{},
+							Arrival:        time.Time{}.Add(4 * time.Millisecond),
+						},
+						{
+							SequenceNumber: 1,
+							Departure:      time.Time{}.Add(3 * time.Millisecond),
+							Arrival:        time.Time{}.Add(4 * time.Millisecond),
+						},
+					},
+					departure: time.Time{},
+					arrival:   time.Time{}.Add(4 * time.Millisecond),
+				},
+				{
+					packets: []cc.Acknowledgment{
+						{
+							SequenceNumber: 2,
+							Departure:      time.Time{}.Add(6 * time.Millisecond),
+							Arrival:        time.Time{}.Add(10 * time.Millisecond),
+						},
+						{
+							SequenceNumber: 3,
+							Departure:      time.Time{}.Add(9 * time.Millisecond),
+							Arrival:        time.Time{}.Add(10 * time.Millisecond),
+						},
+					},
+					departure: time.Time{}.Add(6 * time.Millisecond),
+					arrival:   time.Time{}.Add(10 * time.Millisecond),
+				},
+			},
+		},
 	}
 
 	for _, tc := range cases {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			aga := newArrivalGroupAccumulator()
-			in := make(chan cc.Acknowledgment)
-			out := aga.run(in)
+			in := make(chan []cc.Acknowledgment)
+			out := make(chan arrivalGroup)
 			go func() {
-				for _, as := range tc.log {
-					in <- as
-				}
+				defer close(out)
+				aga.run(in, func(ag arrivalGroup) {
+					out <- ag
+				})
+			}()
+			go func() {
+				in <- tc.log
 				close(in)
 			}()
 			received := []arrivalGroup{}

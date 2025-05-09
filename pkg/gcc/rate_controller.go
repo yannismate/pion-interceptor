@@ -1,19 +1,30 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 package gcc
 
 import (
 	"math"
+	"sync"
 	"time"
+)
 
-	"github.com/pion/logging"
+const (
+	decreaseEMAAlpha = 0.95
+	beta             = 0.85
 )
 
 type rateController struct {
-	log                  logging.LeveledLogger
 	now                  now
 	initialTargetBitrate int
 	minBitrate           int
 	maxBitrate           int
 
+	dsWriter func(DelayStats)
+
+	lock               sync.Mutex
+	init               bool
+	delayStats         DelayStats
 	target             int
 	lastUpdate         time.Time
 	lastState          state
@@ -39,13 +50,17 @@ func (a *exponentialMovingAverage) update(value float64) {
 	}
 }
 
-func newRateController(now now, initialTargetBitrate, minBitrate, maxBitrate int) *rateController {
+func newRateController(
+	now now, initialTargetBitrate, minBitrate, maxBitrate int, dsw func(DelayStats),
+) *rateController {
 	return &rateController{
-		log:                  logging.NewDefaultLoggerFactory().NewLogger("gcc_rate_controller"),
 		now:                  now,
 		initialTargetBitrate: initialTargetBitrate,
 		minBitrate:           minBitrate,
 		maxBitrate:           maxBitrate,
+		dsWriter:             dsw,
+		init:                 false,
+		delayStats:           DelayStats{},
 		target:               initialTargetBitrate,
 		lastUpdate:           time.Time{},
 		lastState:            stateIncrease,
@@ -55,72 +70,75 @@ func newRateController(now now, initialTargetBitrate, minBitrate, maxBitrate int
 	}
 }
 
-func (c *rateController) run(in <-chan DelayStats, receivedRate <-chan int, rtt <-chan time.Duration) chan DelayStats {
-	out := make(chan DelayStats)
-	go func() {
-		c.lastUpdate = c.now()
+func (c *rateController) onReceivedRate(rate int) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.latestReceivedRate = rate
+}
 
-		defer func() {
-			close(out)
-		}()
+func (c *rateController) updateRTT(rtt time.Duration) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	c.latestRTT = rtt
+}
 
-		var latestStats DelayStats
-		init := false
+func (c *rateController) onDelayStats(ds DelayStats) {
+	now := time.Now()
 
-		for {
-			select {
-			case c.latestReceivedRate = <-receivedRate:
-			case c.latestRTT = <-rtt:
-			case nextStats, ok := <-in:
-				if !ok {
-					return
-				}
-				if !init {
-					init = true
-					latestStats = nextStats
-					latestStats.State = stateIncrease
-					continue
-				}
-				latestStats = nextStats
-				latestStats.State = latestStats.State.transition(nextStats.Usage)
+	if !c.init {
+		c.delayStats = ds
+		c.delayStats.State = stateIncrease
+		c.init = true
 
-				now := time.Now()
-				switch latestStats.State {
-				case stateHold:
-				case stateIncrease:
-					c.target = clampInt(c.increase(now), c.minBitrate, c.maxBitrate)
-					out <- DelayStats{
-						Measurement:      latestStats.Measurement,
-						Estimate:         latestStats.Estimate,
-						Threshold:        latestStats.Threshold,
-						lastReceiveDelta: latestStats.lastReceiveDelta,
-						Usage:            latestStats.Usage,
-						State:            latestStats.State,
-						TargetBitrate:    c.target,
-						RTT:              c.latestRTT,
-					}
+		return
+	}
+	c.delayStats = ds
+	c.delayStats.State = c.delayStats.State.transition(ds.Usage)
 
-				case stateDecrease:
-					c.target = clampInt(c.decrease(), c.minBitrate, c.maxBitrate)
-					out <- DelayStats{
-						Measurement:      latestStats.Measurement,
-						Estimate:         latestStats.Estimate,
-						Threshold:        latestStats.Threshold,
-						lastReceiveDelta: latestStats.lastReceiveDelta,
-						Usage:            latestStats.Usage,
-						State:            latestStats.State,
-						TargetBitrate:    c.target,
-						RTT:              c.latestRTT,
-					}
-				}
-			}
+	if c.delayStats.State == stateHold {
+		return
+	}
+
+	var next DelayStats
+
+	c.lock.Lock()
+
+	switch c.delayStats.State {
+	case stateHold:
+		// should never occur due to check above, but makes the linter happy
+	case stateIncrease:
+		c.target = clampInt(c.increase(now), c.minBitrate, c.maxBitrate)
+		next = DelayStats{
+			Measurement:      c.delayStats.Measurement,
+			Estimate:         c.delayStats.Estimate,
+			Threshold:        c.delayStats.Threshold,
+			LastReceiveDelta: c.delayStats.LastReceiveDelta,
+			Usage:            c.delayStats.Usage,
+			State:            c.delayStats.State,
+			TargetBitrate:    c.target,
 		}
-	}()
-	return out
+
+	case stateDecrease:
+		c.target = clampInt(c.decrease(), c.minBitrate, c.maxBitrate)
+		next = DelayStats{
+			Measurement:      c.delayStats.Measurement,
+			Estimate:         c.delayStats.Estimate,
+			Threshold:        c.delayStats.Threshold,
+			LastReceiveDelta: c.delayStats.LastReceiveDelta,
+			Usage:            c.delayStats.Usage,
+			State:            c.delayStats.State,
+			TargetBitrate:    c.target,
+		}
+	}
+
+	c.lock.Unlock()
+
+	c.dsWriter(next)
 }
 
 func (c *rateController) increase(now time.Time) int {
-	if c.latestDecreaseRate.average > 0 && float64(c.latestReceivedRate) > c.latestDecreaseRate.average-3*c.latestDecreaseRate.stdDeviation &&
+	if c.latestDecreaseRate.average > 0 &&
+		float64(c.latestReceivedRate) > c.latestDecreaseRate.average-3*c.latestDecreaseRate.stdDeviation &&
 		float64(c.latestReceivedRate) < c.latestDecreaseRate.average+3*c.latestDecreaseRate.stdDeviation {
 		bitsPerFrame := float64(c.target) / 30.0
 		packetsPerFrame := math.Ceil(bitsPerFrame / (1200 * 8))
@@ -130,6 +148,7 @@ func (c *rateController) increase(now time.Time) int {
 		alpha := 0.5 * math.Min(float64(now.Sub(c.lastUpdate).Milliseconds())/float64(responseTime.Milliseconds()), 1.0)
 		increase := int(math.Max(1000.0, alpha*expectedPacketSizeBits))
 		c.lastUpdate = now
+
 		return int(math.Min(float64(c.target+increase), 1.5*float64(c.latestReceivedRate)))
 	}
 	eta := math.Pow(1.08, math.Min(float64(now.Sub(c.lastUpdate).Milliseconds())/1000, 1.0))
@@ -146,6 +165,7 @@ func (c *rateController) increase(now time.Time) int {
 	if rate < c.target {
 		return c.target
 	}
+
 	return rate
 }
 
@@ -153,5 +173,6 @@ func (c *rateController) decrease() int {
 	target := int(beta * float64(c.latestReceivedRate))
 	c.latestDecreaseRate.update(float64(c.latestReceivedRate))
 	c.lastUpdate = c.now()
+
 	return target
 }

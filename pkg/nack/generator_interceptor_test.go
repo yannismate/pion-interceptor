@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: 2023 The Pion community <https://pion.ly>
+// SPDX-License-Identifier: MIT
+
 package nack
 
 import (
@@ -40,8 +43,8 @@ func TestGeneratorInterceptor(t *testing.T) {
 		case r := <-stream.ReadRTP():
 			assert.NoError(t, r.Err)
 			assert.Equal(t, seqNum, r.Packet.SequenceNumber)
-		case <-time.After(10 * time.Millisecond):
-			t.Fatal("receiver rtp packet not found")
+		case <-time.After(50 * time.Millisecond):
+			assert.FailNow(t, "receiver rtp packet not found")
 		}
 	}
 
@@ -61,9 +64,10 @@ func TestGeneratorInterceptor(t *testing.T) {
 		assert.True(t, ok, "TransportLayerNack rtcp packet expected, found: %T", pkts[0])
 
 		assert.Equal(t, uint16(13), p.Nacks[0].PacketID)
-		assert.Equal(t, rtcp.PacketBitmap(0b10), p.Nacks[0].LostPackets) // we want packets: 13, 15 (not packet 17, because skipLastN is setReceived to 2)
+		// we want packets: 13, 15 (not packet 17, because skipLastN is setReceived to 2)
+		assert.Equal(t, rtcp.PacketBitmap(0b10), p.Nacks[0].LostPackets)
 	case <-time.After(10 * time.Millisecond):
-		t.Fatal("written rtcp packet not found")
+		assert.FailNow(t, "written rtcp packet not found")
 	}
 }
 
@@ -72,4 +76,61 @@ func TestGeneratorInterceptor_InvalidSize(t *testing.T) {
 
 	_, err := f.NewInterceptor("")
 	assert.Error(t, err, ErrInvalidSize)
+}
+
+func TestGeneratorInterceptor_StreamFilter(t *testing.T) {
+	const interval = time.Millisecond * 10
+	f, err := NewGeneratorInterceptor(
+		GeneratorSize(64),
+		GeneratorSkipLastN(2),
+		GeneratorInterval(interval),
+		GeneratorLog(logging.NewDefaultLoggerFactory().NewLogger("test")),
+		GeneratorStreamsFilter(func(info *interceptor.StreamInfo) bool {
+			return info.SSRC != 1 // enable nacks only for ssrc 2
+		}),
+	)
+	assert.NoError(t, err)
+
+	testInterceptor, err := f.NewInterceptor("")
+	assert.NoError(t, err)
+
+	streamWithoutNacks := test.NewMockStream(&interceptor.StreamInfo{
+		SSRC:         1,
+		RTCPFeedback: []interceptor.RTCPFeedback{{Type: "nack"}},
+	}, testInterceptor)
+	defer func() {
+		assert.NoError(t, streamWithoutNacks.Close())
+	}()
+
+	streamWithNacks := test.NewMockStream(&interceptor.StreamInfo{
+		SSRC:         2,
+		RTCPFeedback: []interceptor.RTCPFeedback{{Type: "nack"}},
+	}, testInterceptor)
+	defer func() {
+		assert.NoError(t, streamWithNacks.Close())
+	}()
+
+	for _, seqNum := range []uint16{10, 11, 12, 14, 16, 18} {
+		streamWithNacks.ReceiveRTP(&rtp.Packet{Header: rtp.Header{SequenceNumber: seqNum}})
+		streamWithoutNacks.ReceiveRTP(&rtp.Packet{Header: rtp.Header{SequenceNumber: seqNum}})
+	}
+
+	time.Sleep(interval * 2) // wait for at least 2 nack packets
+
+	// both test streams receive RTCP packets about both test streams (as they both call BindRTCPWriter), so we
+	// can check only one
+	rtcpStream := streamWithNacks.WrittenRTCP()
+
+	for {
+		select {
+		case pkts := <-rtcpStream:
+			for _, pkt := range pkts {
+				if nack, isNack := pkt.(*rtcp.TransportLayerNack); isNack {
+					assert.NotEqual(t, uint32(1), nack.MediaSSRC) // check there are no nacks for ssrc 1
+				}
+			}
+		default:
+			return
+		}
+	}
 }
