@@ -126,7 +126,7 @@ func (n *GeneratorInterceptor) BindRemoteStream(
 			return 0, nil, err
 		}
 		receiveLog.add(header.SequenceNumber)
-		n.log.Tracef("received %d on ssrc %d", header.SequenceNumber, header.SSRC)
+		n.log.Tracef("received %d on ssrc %d", header.SequenceNumber, info.SSRC)
 
 		return i, attr, nil
 	})
@@ -172,7 +172,7 @@ func (n *GeneratorInterceptor) loop(rtcpWriter interceptor.RTCPWriter) {
 
 				for ssrc, receiveLog := range n.receiveLogs {
 					missing := receiveLog.missingSeqNumbers(n.skipLastN, missingPacketSeqNums)
-					n.log.Tracef("ssrc %d missing: %+q", ssrc, missing)
+					n.log.Tracef("ssrc %d missing: %v", ssrc, missing)
 
 					if len(missing) == 0 || n.nackCountLogs[ssrc] == nil {
 						n.nackCountLogs[ssrc] = map[uint16]uint16{}
