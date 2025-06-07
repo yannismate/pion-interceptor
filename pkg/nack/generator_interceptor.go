@@ -98,12 +98,15 @@ func (n *GeneratorInterceptor) BindRemoteStream(
 	n.receiveLogsMu.Lock()
 	var receiveLog *receiveLog = nil
 	if info.SSRCRetransmission != 0 {
+		n.log.Infof("ssrc %d has rtx ssrc %d, creating shared receiveLog", info.SSRC, info.SSRCRetransmission)
 		receiveLog, _ = newReceiveLog(n.size)
 		n.receiveLogs[info.SSRCRetransmission] = receiveLog
 		n.receiveLogs[info.SSRC] = receiveLog
 	} else if existingLog, ok := n.receiveLogs[info.SSRC]; ok {
+		n.log.Infof("ssrc %d seems to be rtx, reusing receiveLog", info.SSRC)
 		receiveLog = existingLog
 	} else {
+		n.log.Infof("ssrc %d unknown, creating new receiveLog", info.SSRC)
 		receiveLog, _ = newReceiveLog(n.size)
 		n.receiveLogs[info.SSRC] = receiveLog
 	}
@@ -123,6 +126,7 @@ func (n *GeneratorInterceptor) BindRemoteStream(
 			return 0, nil, err
 		}
 		receiveLog.add(header.SequenceNumber)
+		n.log.Tracef("received %d on ssrc %d", header.SequenceNumber, header.SSRC)
 
 		return i, attr, nil
 	})
@@ -168,6 +172,7 @@ func (n *GeneratorInterceptor) loop(rtcpWriter interceptor.RTCPWriter) {
 
 				for ssrc, receiveLog := range n.receiveLogs {
 					missing := receiveLog.missingSeqNumbers(n.skipLastN, missingPacketSeqNums)
+					n.log.Tracef("ssrc %d missing: %+q", ssrc, missing)
 
 					if len(missing) == 0 || n.nackCountLogs[ssrc] == nil {
 						n.nackCountLogs[ssrc] = map[uint16]uint16{}
