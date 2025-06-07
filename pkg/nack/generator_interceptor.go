@@ -95,8 +95,16 @@ func (n *GeneratorInterceptor) BindRemoteStream(
 	}
 
 	// error is already checked in NewGeneratorInterceptor
-	receiveLog, _ := newReceiveLog(n.size)
 	n.receiveLogsMu.Lock()
+	var receiveLog *receiveLog = nil
+	if info.SSRCRetransmission != 0 {
+		receiveLog, _ = newReceiveLog(n.size)
+		n.receiveLogs[info.SSRCRetransmission] = receiveLog
+	} else if existingLog, ok := n.receiveLogs[info.SSRC]; ok {
+		receiveLog = existingLog
+	} else {
+		receiveLog, _ = newReceiveLog(n.size)
+	}
 	n.receiveLogs[info.SSRC] = receiveLog
 	n.receiveLogsMu.Unlock()
 
