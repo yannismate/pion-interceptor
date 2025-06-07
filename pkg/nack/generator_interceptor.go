@@ -100,12 +100,13 @@ func (n *GeneratorInterceptor) BindRemoteStream(
 	if info.SSRCRetransmission != 0 {
 		receiveLog, _ = newReceiveLog(n.size)
 		n.receiveLogs[info.SSRCRetransmission] = receiveLog
+		n.receiveLogs[info.SSRC] = receiveLog
 	} else if existingLog, ok := n.receiveLogs[info.SSRC]; ok {
 		receiveLog = existingLog
 	} else {
 		receiveLog, _ = newReceiveLog(n.size)
+		n.receiveLogs[info.SSRC] = receiveLog
 	}
-	n.receiveLogs[info.SSRC] = receiveLog
 	n.receiveLogsMu.Unlock()
 
 	return interceptor.RTPReaderFunc(func(b []byte, a interceptor.Attributes) (int, interceptor.Attributes, error) {
