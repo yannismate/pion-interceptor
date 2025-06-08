@@ -4,6 +4,7 @@
 package nack
 
 import (
+	"encoding/binary"
 	"math/rand"
 	"sync"
 	"time"
@@ -94,6 +95,7 @@ func (n *GeneratorInterceptor) BindRemoteStream(
 		return reader
 	}
 
+	isRTX := false
 	// error is already checked in NewGeneratorInterceptor
 	n.receiveLogsMu.Lock()
 	var receiveLog *receiveLog = nil
@@ -106,6 +108,7 @@ func (n *GeneratorInterceptor) BindRemoteStream(
 	} else if existingLog, ok := n.receiveLogs[info.SSRC]; ok {
 		n.log.Infof("ssrc %d seems to be rtx, reusing receiveLog", info.SSRC)
 		receiveLog = existingLog
+		isRTX = true
 	} else {
 		n.log.Infof("ssrc %d unknown, creating new receiveLog", info.SSRC)
 		receiveLog, _ = newReceiveLog(n.size)
@@ -122,12 +125,26 @@ func (n *GeneratorInterceptor) BindRemoteStream(
 		if attr == nil {
 			attr = make(interceptor.Attributes)
 		}
-		header, err := attr.GetRTPHeader(b[:i])
-		if err != nil {
-			return 0, nil, err
+		var seqNum uint16
+
+		if isRTX {
+			hasExtension := b[0]&0b10000 > 0
+			csrcCount := b[0] & 0b1111
+			headerLength := uint16(12 + (4 * csrcCount))
+			if hasExtension {
+				headerLength += 4 * (1 + binary.BigEndian.Uint16(b[headerLength+2:headerLength+4]))
+			}
+			seqNum = binary.BigEndian.Uint16(b[headerLength : headerLength+2])
+		} else {
+			header, err := attr.GetRTPHeader(b[:i])
+			if err != nil {
+				return 0, nil, err
+			}
+			seqNum = header.SequenceNumber
 		}
-		receiveLog.add(header.SequenceNumber)
-		n.log.Tracef("received %d on ssrc %d", header.SequenceNumber, info.SSRC)
+
+		receiveLog.add(seqNum)
+		n.log.Tracef("received %d on ssrc %d", seqNum, info.SSRC)
 
 		return i, attr, nil
 	})
