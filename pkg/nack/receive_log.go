@@ -11,6 +11,7 @@ import (
 )
 
 type receiveLog struct {
+	ssrc            uint32
 	packets         []uint64
 	size            uint16
 	end             uint16

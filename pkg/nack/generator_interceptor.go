@@ -100,6 +100,7 @@ func (n *GeneratorInterceptor) BindRemoteStream(
 	if info.SSRCRetransmission != 0 {
 		n.log.Infof("ssrc %d has rtx ssrc %d, creating shared receiveLog", info.SSRC, info.SSRCRetransmission)
 		receiveLog, _ = newReceiveLog(n.size)
+		receiveLog.ssrc = info.SSRC
 		n.receiveLogs[info.SSRCRetransmission] = receiveLog
 		n.receiveLogs[info.SSRC] = receiveLog
 	} else if existingLog, ok := n.receiveLogs[info.SSRC]; ok {
@@ -171,6 +172,9 @@ func (n *GeneratorInterceptor) loop(rtcpWriter interceptor.RTCPWriter) {
 				defer n.receiveLogsMu.Unlock()
 
 				for ssrc, receiveLog := range n.receiveLogs {
+					if receiveLog.ssrc != ssrc {
+						continue
+					}
 					missing := receiveLog.missingSeqNumbers(n.skipLastN, missingPacketSeqNums)
 					n.log.Tracef("ssrc %d missing: %v", ssrc, missing)
 
