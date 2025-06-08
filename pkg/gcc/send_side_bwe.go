@@ -49,11 +49,12 @@ type SendSideBWE struct {
 
 	onTargetBitrateChange func(bitrate int)
 
-	lock          sync.Mutex
-	latestStats   Stats
-	latestBitrate int
-	minBitrate    int
-	maxBitrate    int
+	lock              sync.Mutex
+	latestStats       Stats
+	latestBitrate     int
+	minBitrate        int
+	maxBitrate        int
+	lastBitrateUpdate time.Time
 
 	close     chan struct{}
 	closeLock sync.RWMutex
@@ -219,6 +220,11 @@ func (e *SendSideBWE) WriteRTCP(pkts []rtcp.Packet, _ interceptor.Attributes) er
 		e.lossController.updateLossEstimate(acks)
 		e.delayController.updateDelayEstimate(acks)
 	}
+	e.lock.Lock()
+	if e.lastBitrateUpdate.Add(time.Second).Before(time.Now()) {
+		go e.forceBitrateUpdate()
+	}
+	e.lock.Unlock()
 
 	return nil
 }
@@ -277,10 +283,19 @@ func (e *SendSideBWE) Close() error {
 	return e.pacer.Close()
 }
 
+func (e *SendSideBWE) forceBitrateUpdate() {
+	e.lock.Lock()
+	delayStats := e.latestStats.DelayStats
+	e.lock.Unlock()
+
+	e.onDelayUpdate(delayStats)
+}
+
 func (e *SendSideBWE) onDelayUpdate(delayStats DelayStats) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 
+	e.lastBitrateUpdate = time.Now()
 	lossStats := e.lossController.getEstimate(delayStats.TargetBitrate)
 	bitrateChanged := false
 	bitrate := minInt(delayStats.TargetBitrate, lossStats.TargetBitrate)
