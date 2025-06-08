@@ -221,7 +221,7 @@ func (e *SendSideBWE) WriteRTCP(pkts []rtcp.Packet, _ interceptor.Attributes) er
 		e.delayController.updateDelayEstimate(acks)
 	}
 	e.lock.Lock()
-	if e.lastBitrateUpdate.Add(time.Second).Before(time.Now()) {
+	if e.lastBitrateUpdate.Add(time.Second).Before(time.Now()) && e.latestStats.DelayStats.TargetBitrate >= e.minBitrate {
 		go e.forceBitrateUpdate()
 	}
 	e.lock.Unlock()
